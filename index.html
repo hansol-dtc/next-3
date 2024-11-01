@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DTC2024 Next.js 강의 3</title>
+  <meta name="description" content="2024 DTC 신입 대상 Next.js 강의 슬라이드 (3강 &mdash; 데이터와 캐싱)">
+  <link rel="icon" type="image/svg+xml" href="/nextjs-logo.svg">
+  <script type="module" src="/main.js"></script>
+</head>
+
+<body>
+<div class="reveal">
+  <div class="slides">
+
+    <section data-transition="zoom">
+      <h1>Next.js</h1>
+      <p class="subtitle">3강 &mdash; 데이터와 캐싱</p>
+      <p class="byline">2024 DTC &middot; 추희도</p>
+    </section>
+
+    <section data-transition="convex">
+
+      <section>
+        <h3 class="slide-title">슬라이드 보는 법</h3>
+        <table class="keys">
+          <tr><td>&rarr; / Space</td><td>다음으로</td></tr>
+          <tr><td>&larr;</td><td>이전으로</td></tr>
+          <tr><td>&darr; / &uarr;</td><td>같은 주제 안에서 단계 이동</td></tr>
+          <tr><td>O</td><td>전체 슬라이드 한눈에 보기</td></tr>
+          <tr><td>S</td><td>발표자 노트</td></tr>
+          <tr><td>F</td><td>전체화면</td></tr>
+        </table>
+        <p class="hint">아래쪽 화살표가 보이면 그 주제는 단계별로 이어집니다</p>
+      </section>
+
+      <section>
+        <h3 class="slide-title">2강 복습</h3>
+        <table class="summary">
+          <tr><td>기본값</td><td>서버 컴포넌트</td></tr>
+          <tr><td>'use client'</td><td>훅 · 이벤트가 필요할 때만</td></tr>
+          <tr><td>원칙</td><td>잎사귀에만 붙인다</td></tr>
+        </table>
+        <p class="hint">오늘은 서버 컴포넌트로 <strong>데이터</strong>를 가져옵니다</p>
+      </section>
+
+      <section>
+        <h3 class="slide-title">오늘 끝나면 할 수 있는 것</h3>
+        <ul class="goals">
+          <li>컴포넌트에서 바로 데이터를 가져온다</li>
+          <li>기다리는 동안 다른 부분을 먼저 보여준다</li>
+          <li>실패했을 때 화면을 만든다</li>
+          <li>얼마나 자주 새로 받아올지 정한다</li>
+        </ul>
+      </section>
+
+    </section>
+
+    <section data-transition="convex">
+
+      <section>
+        <h3 class="slide-title">오늘 배울 것</h3>
+        <ul class="toc">
+          <li>12. 서버에서 데이터 가져오기</li>
+          <li>13. loading.js</li>
+          <li>14. error.js</li>
+          <li>15. 캐싱과 revalidate</li>
+          <li>16. 동적 렌더링</li>
+        </ul>
+      </section>
+
+    </section>
+
+    <section data-transition="convex">
+
+      <section>
+        <h2>12. 서버에서 데이터 가져오기</h2><p class="lead">화면에 자료를 올리려면</p>
+      </section>
+
+      <section>
+        <h3 class="slide-title">12. 데이터 가져오기 <span class="tag warn">React</span></h3>
+        <div class="split">
+          <pre>
+            <code class="language-javascript" data-trim>
+              'use client';
+
+              function Page() {
+                const [posts, setPosts] = useState([]);
+                const [loading, setLoading] = useState(true);
+
+                useEffect(() =&gt; {
+                  fetch('/api/posts')
+                    .then(r =&gt; r.json())
+                    .then(d =&gt; { setPosts(d); setLoading(false); });
+                }, []);
+              }
+            </code>
+          </pre>
+          <div class="demo console" data-label="터미널">
+            <div class="ln">React 3강에서 하던 방식</div>
+            <div class="ln">상태 두 개에 effect 하나</div>
+          </div>
+        </div>
+        <p class="ask">Next에서는 몇 줄이면 될까요?</p>
+      </section>
+
+      <section>
+        <h3 class="slide-title">12. 데이터 가져오기 <span class="tag">Next</span></h3>
+        <div class="split">
+          <pre>
+            <code class="language-javascript" data-trim>
+              export default async function Page() {
+                const res = await fetch(
+                  'https://api.example.com/posts'
+                );
+                const posts = await res.json();
+
+                return &lt;PostList posts={posts} /&gt;;
+              }
+            </code>
+          </pre>
+          <div class="demo browser" data-label="브라우저 화면">
+            <ul><li>첫 번째 글</li><li>두 번째 글</li></ul>
+          </div>
+        </div>
+        <aside class="notes">useState도 useEffect도 없다. 서버에서 실행되니 그냥 기다렸다 쓰면 된다.</aside>
+      </section>
+
+      <section>
+        <h3 class="slide-title">12. 정리</h3>
+        <ul class="summary-card">
+          <li>컴포넌트에 <code class="inline">async</code> 를 붙인다</li>
+          <li><code class="inline">await</code> 로 기다렸다가 바로 쓴다</li>
+          <li>데이터가 준비된 HTML이 브라우저로 간다</li>
+        </ul>
+        <aside class="notes">API 키 같은 비밀도 여기서는 안전하다. 브라우저로 안 가기 때문.</aside>
+      </section>
+
+    </section>
+
+    <section data-transition="convex">
+
+      <section>
+        <h2>13. loading.js</h2><p class="lead">기다리는 동안 보여주려면</p>
+      </section>
+
+      <section>
+        <h3 class="slide-title">13. loading.js</h3>
+        <div class="split">
+          <pre>
+            <span class="filename">app/blog/loading.js</span>
+            <code class="language-javascript" data-trim>
+              export default function Loading() {
+                return &lt;p&gt;불러오는 중…&lt;/p&gt;;
+              }
+            </code>
+          </pre>
+          <div class="demo browser" data-label="브라우저 화면">
+            <p>불러오는 중…</p>
+          </div>
+        </div>
+        <aside class="notes">파일만 만들어두면 Next가 알아서 보여준다. 등록하는 코드가 없다.</aside>
+      </section>
+
+      <section>
+        <h3 class="slide-title">13. loading.js <span class="tag">스트리밍</span></h3>
+        <div class="tree">app/blog/
+        ├─ <b>loading.js</b>   <i>데이터 기다리는 동안</i>
+        └─ page.js         <i>준비되면 이걸로 교체</i></div>
+            <p class="hint">layout은 그대로 있고 page 자리만 바뀐다</p>
+        <aside class="notes">메뉴와 헤더는 이미 보인다. 데이터가 필요한 부분만 나중에 채워진다.</aside>
+      </section>
+
+      <section>
+        <h3 class="slide-title">13. 정리</h3>
+        <ul class="summary-card">
+          <li>React 3강에서 <code class="inline">loading</code> state를 직접 만들던 것</li>
+          <li>Next에서는 <strong>파일 하나</strong>로 끝난다</li>
+        </ul>
+      </section>
+
+    </section>
+
+    <section data-transition="convex">
+
+      <section>
+        <h2>14. error.js</h2><p class="lead">실패했을 때 보여주려면</p>
+      </section>
+
+      <section>
+        <h3 class="slide-title">14. error.js</h3>
+        <div class="split">
+          <pre>
+            <span class="filename">app/blog/error.js</span>
+            <code class="language-javascript" data-trim>
+              'use client';
+
+              export default function Error({ error, reset }) {
+                return (
+                  &lt;&gt;
+                    &lt;p&gt;문제가 생겼습니다&lt;/p&gt;
+                    &lt;button onClick={reset}&gt;다시 시도&lt;/button&gt;
+                  &lt;/&gt;
+                );
+              }
+            </code>
+          </pre>
+          <div class="demo browser" data-label="브라우저 화면">
+            <p>문제가 생겼습니다</p><button>다시 시도</button>
+          </div>
+        </div>
+        <aside class="notes">error.js는 반드시 'use client'다. 다시 시도 버튼에 이벤트가 필요하기 때문.</aside>
+      </section>
+
+      <section>
+        <h3 class="slide-title">14. 정리</h3>
+        <ul class="summary-card warn">
+          <li><code class="inline">error.js</code> 는 항상 <code class="inline">'use client'</code></li>
+          <li><code class="inline">reset()</code> 을 부르면 다시 시도한다</li>
+          <li>같은 폴더의 <code class="inline">layout.js</code> 에서 난 에러는 못 잡는다</li>
+        </ul>
+      </section>
+
+    </section>
+
+    <section data-transition="convex">
+
+      <section>
+        <h2>15. 캐싱과 revalidate</h2><p class="lead">얼마나 자주 새로 받을지 정하려면</p>
+      </section>
+
+      <section>
+        <h3 class="slide-title">15. 캐싱 <span class="tag warn">기본 동작</span></h3>
+        <div class="split">
+          <pre>
+            <code class="language-javascript" data-trim>
+              const res = await fetch(
+                'https://api.example.com/posts'
+              );
+            </code>
+          </pre>
+          <div class="demo console" data-label="터미널">
+            <div class="ln">한 번 받은 뒤로는</div>
+            <div class="ln">저장해둔 것을 계속 쓴다</div>
+          </div>
+        </div>
+        <p class="ask">글을 새로 써도 목록이 그대로면?</p>
+        <aside class="notes">빠른 대신 자료가 오래된다. 이걸 모르면 "왜 안 바뀌지?"로 한참 헤맨다.</aside>
+      </section>
+
+      <section>
+        <h3 class="slide-title">15. 캐싱 <span class="tag">고르기</span></h3>
+        <div class="split">
+          <pre>
+            <code class="language-javascript" data-trim>
+              // 60초마다 새로 받는다
+              fetch(url, { next: { revalidate: 60 } });
+
+              // 매번 새로 받는다
+              fetch(url, { cache: 'no-store' });
+            </code>
+          </pre>
+          <div class="demo values" data-label="값">
+            <div class="row"><code>기본</code><span>계속 저장</span></div>
+            <div class="row"><code>revalidate: 60</code><span>60초마다</span></div>
+            <div class="row"><code>cache: 'no-store'</code><span>매번</span></div>
+          </div>
+        </div>
+        <aside class="notes">자주 안 바뀌는 것은 revalidate, 실시간이어야 하는 것은 no-store.</aside>
+      </section>
+
+      <section>
+        <h3 class="slide-title">15. 캐싱 <span class="tag">어떻게 정하나</span></h3>
+        <table class="summary">
+          <tr><td>블로그 글</td><td>revalidate: 3600</td></tr>
+          <tr><td>상품 목록</td><td>revalidate: 60</td></tr>
+          <tr><td>장바구니</td><td>no-store</td></tr>
+          <tr><td>실시간 채팅</td><td>클라이언트에서 처리</td></tr>
+        </table>
+      </section>
+
+    </section>
+
+    <section data-transition="convex">
+
+      <section>
+        <h2>16. 동적 렌더링</h2><p class="lead">요청마다 달라야 한다면</p>
+      </section>
+
+      <section>
+        <h3 class="slide-title">16. 동적 렌더링 <span class="tag">searchParams</span></h3>
+        <div class="split">
+          <pre>
+            <code class="language-javascript" data-trim>
+              export default function Page({ searchParams }) {
+                const q = searchParams.q;
+                return &lt;p&gt;{q} 검색 결과&lt;/p&gt;;
+              }
+            </code>
+          </pre>
+          <div class="demo browser" data-label="/search?q=고양이">
+            <p>고양이 검색 결과</p>
+          </div>
+        </div>
+        <aside class="notes">? 뒤의 값도 props로 들어온다. 이걸 쓰면 그 페이지는 요청마다 새로 그려진다.</aside>
+      </section>
+
+      <section>
+        <h3 class="slide-title">16. 동적 렌더링</h3>
+        <div class="compare">
+          <div><span class="tag-lang">정적</span><p>빌드할 때 한 번</p><em>모두에게 같은 화면</em></div>
+          <div><span class="tag-lang">동적</span><p>요청할 때마다</p><em>사람마다 다른 화면</em></div>
+        </div>
+        <aside class="notes">searchParams, cookies, headers를 쓰면 자동으로 동적이 된다. 따로 설정할 필요가 없다.</aside>
+      </section>
+
+    </section>
+
+    <section data-transition="convex">
+
+      <section>
+        <h2>정리</h2><p class="lead">오늘 배운 것</p>
+      </section>
+
+      <section>
+        <h3 class="slide-title">한눈에</h3>
+        <table class="summary">
+          <tr><td>async 컴포넌트</td><td>await 로 바로 가져온다</td></tr>
+          <tr><td>loading.js</td><td>기다리는 동안</td></tr>
+          <tr><td>error.js</td><td>실패했을 때. 'use client'</td></tr>
+          <tr><td>revalidate</td><td>몇 초마다 새로 받을지</td></tr>
+          <tr><td>no-store</td><td>매번 새로</td></tr>
+          <tr><td>searchParams</td><td>쓰면 동적 렌더링</td></tr>
+        </table>
+      </section>
+
+    </section>
+
+    <section data-transition="convex">
+
+      <section>
+        <h2>실습</h2><p class="lead">직접 만들어봅시다</p>
+      </section>
+
+      <section>
+        <h3 class="slide-title">실습 과제</h3>
+        <ol class="toc">
+          <li>공개 API에서 글 목록 받아 <code class="inline">/blog</code> 에 그리기</li>
+          <li><code class="inline">loading.js</code> 와 <code class="inline">error.js</code> 만들기</li>
+          <li><code class="inline">/blog/[id]</code> 에서 글 하나만 받아오기</li>
+          <li><code class="inline">revalidate</code> 를 10초로 두고 바뀌는지 확인</li>
+        </ol>
+        <p class="hint">API는 jsonplaceholder.typicode.com 을 씁니다</p>
+      </section>
+
+      <section>
+        <h3 class="slide-title">더 볼 것</h3>
+        <ul class="toc">
+          <li><a href="https://nextjs.org/docs/app/building-your-application/data-fetching" target="_blank" rel="noreferrer">데이터 가져오기 문서</a></li>
+          <li><a href="https://nextjs.org/docs/app/building-your-application/caching" target="_blank" rel="noreferrer">캐싱 문서</a></li>
+        </ul>
+      </section>
+
+      <section data-transition="zoom">
+        <h1>끝</h1><p class="subtitle">4강에서는 데이터를 보냅니다</p>
+      </section>
+
+    </section>
+
+  </div>
+</div>
+</body>
+
+</html>
